@@ -1,0 +1,46 @@
+{
+  "id": "062ad5f4dc061c0ec34c24253e77e6ff",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Hello in Chinese is **你好** (nǐ hǎo)!\n\nYou can also say:\n\n- **早上好** (zǎo shàng hǎo) - Good morning\n- **晚上好** (wǎn shàng hǎo) - Good evening\n- **嗨** (hāi) - Hi (informal)\n\nIs there anything else you'd like to know?",
+        "role": "assistant",
+        "name": "MiniMax AI",
+        "audio_content": "",
+        "reasoning_content": "The user wants me to say hello in Chinese. The most common greeting in Chinese is \"你好\" (nǐ hǎo), which means \"hello\" or \"hi\". I should provide this as my response.",
+        "reasoning_details": [
+          {
+            "type": "reasoning.text",
+            "id": "reasoning-text-1",
+            "format": "MiniMax-response-v1",
+            "index": 0,
+            "text": "The user wants me to say hello in Chinese. The most common greeting in Chinese is \"你好\" (nǐ hǎo), which means \"hello\" or \"hi\". I should provide this as my response."
+          }
+        ]
+      }
+    }
+  ],
+  "created": 1776001780,
+  "model": "MiniMax-M2.7",
+  "object": "chat.completion",
+  "usage": {
+    "total_tokens": 154,
+    "total_characters": 0,
+    "prompt_tokens": 24,
+    "completion_tokens": 130,
+    "completion_tokens_details": {
+      "reasoning_tokens": 48
+    }
+  },
+  "input_sensitive": false,
+  "output_sensitive": false,
+  "input_sensitive_type": 0,
+  "output_sensitive_type": 0,
+  "output_sensitive_int": 0,
+  "base_resp": {
+    "status_code": 0,
+    "status_msg": ""
+  }
+}

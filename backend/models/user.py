@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from datetime import datetime
 from utils.db import Base
+from pydantic import BaseModel
+from typing import Optional
 
 
 class User(Base):
@@ -18,22 +20,21 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
-from pydantic import BaseModel
-
-
 class UserCreate(BaseModel):
     username: str
     email: str
     password: str
-    full_name: str | None = None
+    full_name: Optional[str] = None
+    invite_code: Optional[str] = None  # 管理员邀请码
 
 
 class UserResponse(BaseModel):
     id: int
     username: str
     email: str
-    full_name: str | None = None
+    full_name: Optional[str] = None
     is_admin: bool
+    created_at: datetime
 
     class Config:
         from_attributes = True

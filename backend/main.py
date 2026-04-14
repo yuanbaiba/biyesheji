@@ -16,8 +16,24 @@ mysql_config = {
 try:
     conn = pymysql.connect(**mysql_config, connect_timeout=10)
     cursor = conn.cursor()
-    cursor.execute(f"DROP DATABASE IF EXISTS {DB_CONFIG['database']};")
-    cursor.execute(f"CREATE DATABASE {DB_CONFIG['database']} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+
+    # 检查RESET_DB环境变量
+    reset_db = os.environ.get('RESET_DB', '').lower() == 'true'
+
+    if reset_db:
+        # 重置模式：删除并重建数据库
+        print(f"重置数据库: {DB_CONFIG['database']}")
+        cursor.execute(f"DROP DATABASE IF EXISTS {DB_CONFIG['database']};")
+        cursor.execute(f"CREATE DATABASE {DB_CONFIG['database']} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+    else:
+        # 安全模式：检查数据库是否存在，不存在则创建
+        cursor.execute(f"SHOW DATABASES LIKE '{DB_CONFIG['database']}';")
+        if not cursor.fetchone():
+            print(f"创建数据库: {DB_CONFIG['database']}")
+            cursor.execute(f"CREATE DATABASE {DB_CONFIG['database']} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
+        else:
+            print(f"数据库已存在: {DB_CONFIG['database']}")
+
     conn.commit()
 except Exception as e:
     print(f"数据库错误: {e}")
@@ -52,10 +68,14 @@ app.add_middleware(
 from api.auth import router as auth_router
 from api.resume import router as resume_router
 from api.interview import router as interview_router
+from api.jobs import router as jobs_router
+from api.admin import router as admin_router
 
 app.include_router(auth_router)
 app.include_router(resume_router)
 app.include_router(interview_router)
+app.include_router(jobs_router)
+app.include_router(admin_router)
 
 @app.get("/api/health")
 def health():

@@ -5,6 +5,8 @@ import Home from '../views/Home.vue'
 import Resume from '../views/Resume.vue'
 import Interview from '../views/Interview.vue'
 import Result from '../views/Result.vue'
+import Admin from '../views/Admin.vue'
+import NotFound from '../views/NotFound.vue'
 
 const routes = [
   { path: '/', redirect: '/login' },
@@ -13,7 +15,9 @@ const routes = [
   { path: '/home', component: Home },
   { path: '/resume', component: Resume },
   { path: '/interview', component: Interview },
-  { path: '/result', component: Result }
+  { path: '/result', component: Result },
+  { path: '/admin', component: Admin },
+  { path: '/:pathMatch(.*)*', component: NotFound }
 ]
 
 const router = createRouter({

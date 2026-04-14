@@ -29,8 +29,9 @@ def get_db():
         db.close()
 
 def init_db():
-    Base.metadata.drop_all(bind=engine)
+    # 只创建不存在的表，不删除数据
     from models.user import User
     from models.resume import Resume
     from models.interview import Interview, InterviewAnswer
+    from models.job import Job
     Base.metadata.create_all(bind=engine)

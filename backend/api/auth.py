@@ -1,54 +1,80 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from pydantic import BaseModel
+from typing import Optional
 
 from utils.db import get_db
+from utils.security import verify_password, get_password_hash, create_access_token, verify_token
 from models.user import User, UserCreate, UserResponse
-
-SECRET_KEY = "auto-interview-2026-key-123456789"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+from config import SECURITY_CONFIG
 
 router = APIRouter(prefix="/api/auth", tags=["用户认证"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-def get_password_hash(p): return p
-def verify_password(p, h): return p == h
+INVITE_CODE = "123456"
 
-def create_token(data):
-    return f"demo_token_{data['sub']}_{data['username']}_{datetime.now().timestamp()}"
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    user_id: int
+class RegisterRequest(BaseModel):
     username: str
+    email: str
+    password: str
+    full_name: Optional[str] = None
+    invite_code: Optional[str] = None  # 管理员邀请码
+
 
 @router.post("/register", response_model=UserResponse)
-def register(u: UserCreate, db=Depends(get_db)):
-    if db.query(User).filter(User.username==u.username).first():
-        raise HTTPException(400, "用户名已存在")
-    if db.query(User).filter(User.email==u.email).first():
-        raise HTTPException(400, "邮箱已存在")
-    user = User(username=u.username, email=u.email, hashed_password=get_password_hash(u.password), full_name=u.full_name)
+async def register(request: RegisterRequest, db=Depends(get_db)):
+    # 检查用户名是否已存在
+    if db.query(User).filter(User.username == request.username).first():
+        raise HTTPException(status_code=400, detail="用户名已存在")
+    # 检查邮箱是否已存在
+    if db.query(User).filter(User.email == request.email).first():
+        raise HTTPException(status_code=400, detail="邮箱已存在")
+
+    # 检查是否是管理员注册（通过invite_code）
+    is_admin = request.invite_code == INVITE_CODE if request.invite_code else False
+
+    user = User(
+        username=request.username,
+        email=request.email,
+        hashed_password=get_password_hash(request.password),
+        full_name=request.full_name,
+        is_admin=is_admin
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
 
-@router.post("/login", response_model=Token)
-def login(form=Depends(OAuth2PasswordRequestForm), db=Depends(get_db)):
-    user = db.query(User).filter(User.username==form.username).first()
-    if not user or not verify_password(form.password, user.hashed_password):
-        raise HTTPException(401, "用户名或密码错误")
-    token = create_token({"sub":user.id, "username":user.username})
-    return {"access_token":token, "token_type":"bearer", "user_id":user.id, "username":user.username}
+@router.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db=Depends(get_db)):
+    user = db.query(User).filter(User.username == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="用户名或密码错误")
+    token = create_access_token(data={"sub": user.id, "username": user.username})
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "username": user.username,
+        "is_admin": user.is_admin
+    }
 
 @router.get("/me", response_model=UserResponse)
-def me(token=Depends(oauth2_scheme), db=Depends(get_db)):
+def me(token: str = Depends(oauth2_scheme), db=Depends(get_db)):
     if token.startswith("demo_token_"):
         user_id = int(token.split("_")[2])
-        return db.query(User).filter(User.id==user_id).first()
-    raise HTTPException(401, "Token无效")
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        return user
+
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Token无效")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    return user

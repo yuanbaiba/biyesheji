@@ -6,10 +6,28 @@ export default defineConfig({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true
+        target: 'http://localhost:30000',
+        changeOrigin: true,
+        secure: false
       }
     }
   },
-  plugins: [vue()]
+  plugins: [
+    vue()
+  ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'element-plus': ['element-plus'],
+          'echarts': ['echarts'],
+          'vue-vendor': ['vue', 'vue-router']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  },
+  optimizeDeps: {
+    include: ['element-plus', 'axios', 'vue', 'vue-router', 'pinia']
+  }
 })
